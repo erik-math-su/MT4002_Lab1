@@ -1,0 +1,174 @@
+
+```{r}
+P <- matrix(c(0, 0, 0, 0.4, 0, 0.6,
+              0.1, 0.1, 0, 0.4, 0, 0.4,
+              0, 0.2, 0.2, 0.3, 0, 0.3,
+              0, 0, 0.3, 0.5, 0, 0.2,
+              0, 0, 0, 0.4, 0.6, 0,
+              0, 0, 0, 0, 0.5, 0.5),
+              nrow = 6,
+              ncol = 6,
+              byrow = TRUE)
+
+
+mpow <- function(A, n) {
+  resultat <- diag(nrow(A))
+  potens <- n
+  while (potens > 0) {
+    resultat <- A %*% resultat
+    potens <- potens - 1
+    }
+  return(resultat)
+}
+
+rows_equal <- function(A, d = 4) {
+  A_new <- trunc(A * 10^d) # förstora talet och ta heltalsdelen
+  for (k in 2:nrow(A_new)) {
+    # Kolla om alla element i rad 1 är lika med motsvarande element i rad k
+    if (!all(A_new[1, ] == A_new[k, ])) {
+    # Om något element skiljer sig så är raderna ej lika
+      return(FALSE)
+      }
+    }
+  # Hamnar vi här så var alla rader lika
+    return(TRUE)
+}
+
+matrices_equal <- function(A, B, d = 4) {
+  A_new <- trunc(A * 10^d)
+  B_new <- trunc(B * 10^d)
+  if (all(A_new == B_new)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+gen_sim <- function(x, P) {
+  u <- runif(1)
+  y <- 0
+  test <- P[x + 1, 1]
+  while (u > test) {
+    y <- y + 1
+    test <- test + P[x + 1, y + 1]
+  }
+  y
+}
+
+
+simulera_kedja <- function(x, n, P) {
+results <- numeric(n + 1) # vektor av nollor, till en början
+results[1] <- x # första elementet är initialtillståndet
+for (i in 2:(n+1)) {
+  results[i] <- gen_sim(results[i - 1], P) # simulera övriga element
+  }
+  # ta bort initialtillståndet och returnera vektorn med simulerade tillstånd
+results[-1]
+}
+
+```
+
+# Uppgift 1
+
+```{r}
+resultat_matris <- rbind(
+  "1.1a (Torsdag, tillstånd 5)"   = mpow(P, 3)[6,],
+  "1.1b (1 vecka, tillstånd 5)"   = mpow(P, 7)[6,],
+  "1.1c (2 veckor, tillstånd 5)"  = mpow(P, 14)[6,],
+  "1.1d (3 månader, tillstånd 5)" = mpow(P, 90)[6,],
+  "1.2a (Torsdag, tillstånd 2)"   = mpow(P, 3)[3,],
+  "1.2b (1 vecka, tillstånd 2)"   = mpow(P, 7)[3,],
+  "1.2c (2 veckor, tillstånd 2)"  = mpow(P, 14)[3,],
+  "1.2d (3 månader, tillstånd 2)" = mpow(P, 90)[3,]
+)
+
+df_resultat <- as.data.frame(resultat_matris)
+
+colnames(df_resultat) <- c("Tillstånd 0", "Tillstånd 1", "Tillstånd 2", 
+                           "Tillstånd 3", "Tillstånd 4", "Tillstånd 5")
+
+round(df_resultat, 5)
+```
+
+# Uppgift 2
+
+## Uppgift 2a
+
+```{r}
+n <- 1
+Pn <- P  
+
+repeat {
+  Pn1 <- Pn %*% P 
+  if (matrices_equal(Pn, Pn1, d = 4) && rows_equal(Pn, d = 4)) {
+    cat("Konvergens uppnås vid n =", n, "\n")
+    rad_uppg1 <- Pn[1, ]
+    break
+  }
+  
+  Pn <- Pn1
+  n <- n + 1
+}
+```
+
+
+## Uppgift 2b
+
+```{r}
+A <- t(P - diag(nrow(P))) # Transponering krävs då R behöver kolonn vektorer
+sista_vilkor <- rep(1, ncol(A))
+
+A_1 <- rbind(A, sista_vilkor)
+
+b <- c(rep(0, nrow(A)), 1)
+
+pi <- qr.solve(A_1, b)  #qr.solve behövs för överbestämda system (solve bara kvadratiska)
+
+print(rad_uppg1)
+print(pi)
+```
+
+# Uppgift 3
+
+```{r}
+set.seed(950122)
+resultat_sim <- simulera_kedja(5, 1000, P)
+
+barplot(table(resultat_sim), 
+        xlab = "Tillstånd", 
+        ylab = "Antal dagar", 
+        main = "Histogram över maskinens tillstånd")
+```
+
+# Uppgift 4
+## Uppgift 4a
+
+Per definiton av betingad sannolikhet: $P(X_{n-1} = 1 | (X_{n} = 5)= \frac{P(X_{n-1} = 1, X_n = 5)}{P(X_n=5)}$ \\
+Empiriskt behöver vi alltså räkna antal par av igår och idag som uppfyller täljaren delat på antal som uppfyller nämnaren. \\
+
+```{r}
+# Detta gör så att vi får paren idag och igår med samma index.
+igår <- resultat_sim[1:999]
+idag <- resultat_sim[2:1000]
+
+
+antal_idag_5 <- sum(idag == 5)
+
+antal_1_och_5 <- sum(igår == 1 & idag == 5)
+
+empirisk_sannolikhet <- antal_1_och_5 / antal_idag_5
+
+
+print(empirisk_sannolikhet)
+```
+## Uppgift 4b
+Enligt Bayes
+
+$$
+P(X_{n-1} = 1 | (X_{n} = 5) = \frac{P(X_{n} = 5| X_{n-1} = 1)P(X_{n-1} = 1)}{P(X_{n} = 5)} = \frac{P_{15}\cdot \pi_1}{\pi_5}
+$$
+```{r}
+teoretisk_sannolikhet <- (P[2, 6] * pi[2]) / pi[6]
+print(teoretisk_sannolikhet)
+```
+
