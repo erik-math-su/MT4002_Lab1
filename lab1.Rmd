@@ -132,7 +132,7 @@ print(pi)
 
 ```{r}
 set.seed(950122)
-resultat_sim <- simulera_kedja(5, 1000, P)
+resultat_sim <- simulera_kedja(5, 100000, P)
 
 barplot(table(resultat_sim), 
         xlab = "Tillstånd", 
@@ -141,15 +141,17 @@ barplot(table(resultat_sim),
 ```
 
 # Uppgift 4
+
 ## Uppgift 4a
 
-Per definiton av betingad sannolikhet: $P(X_{n-1} = 1 | (X_{n} = 5)= \frac{P(X_{n-1} = 1, X_n = 5)}{P(X_n=5)}$ \\
+Per definiton av betingad sannolikhet: 
+$$P(X_{n-1} = 1 | (X_{n} = 5)= \frac{P(X_{n-1} = 1, X_n = 5)}{P(X_n=5)}$$ \\
 Empiriskt behöver vi alltså räkna antal par av igår och idag som uppfyller täljaren delat på antal som uppfyller nämnaren. \\
 
 ```{r}
 # Detta gör så att vi får paren idag och igår med samma index.
-igår <- resultat_sim[1:999]
-idag <- resultat_sim[2:1000]
+igår <- resultat_sim[1:99999]
+idag <- resultat_sim[2:100000]
 
 
 antal_idag_5 <- sum(idag == 5)
@@ -161,7 +163,9 @@ empirisk_sannolikhet <- antal_1_och_5 / antal_idag_5
 
 print(empirisk_sannolikhet)
 ```
+
 ## Uppgift 4b
+
 Enligt Bayes
 
 $$
@@ -171,4 +175,5 @@ $$
 teoretisk_sannolikhet <- (P[2, 6] * pi[2]) / pi[6]
 print(teoretisk_sannolikhet)
 ```
+
 
