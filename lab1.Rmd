@@ -96,17 +96,16 @@ round(df_resultat, 5)
 
 ```{r}
 n <- 1
-Pn <- P  
-
 repeat {
-  Pn1 <- Pn %*% P 
+  Pn <- mpow(P, n)
+  Pn1 <- mpow(P, n + 1)
+
   if (matrices_equal(Pn, Pn1, d = 4) && rows_equal(Pn, d = 4)) {
     cat("Konvergens uppnås vid n =", n, "\n")
     rad_uppg1 <- Pn[1, ]
     break
   }
   
-  Pn <- Pn1
   n <- n + 1
 }
 ```
@@ -116,11 +115,11 @@ repeat {
 
 ```{r}
 A <- t(P - diag(nrow(P))) # Transponering krävs då R behöver kolonn vektorer
-sista_vilkor <- rep(1, ncol(A))
+sista_vilkor <- rep(1,1,1,1,1,1)
 
 A_1 <- rbind(A, sista_vilkor)
 
-b <- c(rep(0, nrow(A)), 1)
+b <- c(0,0,0,0,0,0,1)
 
 pi <- qr.solve(A_1, b)  #qr.solve behövs för överbestämda system (solve bara kvadratiska)
 
